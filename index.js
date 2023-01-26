@@ -40,9 +40,9 @@ io.of("/ws_connect").on("connection", (socket) => {
   socket.on("data", (data) => { io.of('/ws_serve').to(s_socket_id).emit("data", data); });
   socket.on('chat message', msg => {
     var jmsg = JSON.parse(msg);
-    // mous(jmsg.X*1920*0.8,jmsg.Y*1080*0.8);
+    mous(jmsg);
     // press(x.key, x.code);
-    cont(jmsg);
+    // cont(jmsg);
   });
   socket.on("disconnect", () => {
     c_socket_id = -1;
@@ -63,11 +63,46 @@ server.listen(443, function () {
   console.log('Server up and running at port %s', 443);
 });
 
-var mous = (async (a, b) => {
+
+
+var moved = false, mouse_stamp = Date.now();
+var old_a = 0, old_b = 0;
+var lclicked = 0, rclicked = 0;
+setInterval(() => { if (Date.now() - mouse_stamp > 1000) { moved = false; } }, 1000);
+var mous = (async (jmsg) => {
+  let a = jmsg.X * 1920 * 0.8, b = jmsg.Y * 1080 * 0.8;
+  if (old_a != a || old_b != b || jmsg.leftClick || jmsg.rightClick || jmsg.scroll) {
+    old_a = a;
+    old_b = b;
+    moved = true;
+    mouse_stamp = Date.now();
+  }
+  if (!moved) return;
   const target = new Point(a, b);
   await mouse.setPosition(target);
-  //await mouse.pressButton(Button.LEFT);
-  //await mouse.scrollUp(5);
+  if (jmsg.leftClick != lclicked) {
+    if (lclicked == 0) {
+      lclicked = 1;
+      await mouse.pressButton(Button.LEFT);
+    }
+    else {
+      lclicked = 0;
+      await mouse.releaseButton(Button.LEFT);
+    }
+  }
+  if (jmsg.rightClick != rclicked) {
+    if (rclicked == 0) {
+      rclicked = 1;
+      await mouse.pressButton(Button.RIGHT);
+    }
+    else {
+      rclicked = 0;
+      await mouse.releaseButton(Button.RIGHT);
+    }
+  }
+  if (jmsg.scroll > 0) await mouse.scrollDown(75);
+  else if (jmsg.scroll < 0) await mouse.scrollUp(75);
+
 });
 
 
@@ -79,8 +114,8 @@ controller2.connect();
 controller2.updateMode = "manual";
 
 var controller_set = {};
-controller_set[0]=controller1;
-controller_set[1]=controller2;
+controller_set[0] = controller1;
+controller_set[1] = controller2;
 // var active_set = {};
 let keySet = Object.keys(controller_set);
 

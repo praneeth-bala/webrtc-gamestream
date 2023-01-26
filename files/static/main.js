@@ -437,15 +437,25 @@ function init_controls(){
         
         function mouseEvent(e) {
             // e = Mouse click event.
-            mouse_stamp = e.timeStamp;
+            //mouse_stamp = e.timeStamp;
             var rect = e.target.getBoundingClientRect();
             mouse_x = (e.clientX - rect.left) / (rect.right - rect.left); //x position within the element.
             mouse_y = (e.clientY - rect.top) / (rect.bottom - rect.top);  //y position within the element.
-            moved = true;
         }
-        // document.getElementById('mainVideo').onmousemove = mouseEvent;
-        // setInterval(() => {if (moved) { LaplaceVar.socket.emit('chat message', JSON.stringify({ X: mouse_x, Y: mouse_y })); }}, 50);
-        // setInterval(() => {if (!moved && Date.now()-mouse_stamp>1000) {moved=false;}}, 1000);
+
+        function mouseClick(press, e){
+            e.preventDefault();
+            if(e.button==0)
+            lclick=press;
+            else
+            rclick=press;
+        }
+
+        document.getElementById('mainVideo').onmousemove = mouseEvent;
+        document.getElementById('mainVideo').onmousedown = (e)=>{mouseClick(1,e)};
+        document.getElementById('mainVideo').onmouseup = (e)=>{mouseClick(0,e)};
+        document.getElementById('mainVideo').addEventListener('wheel', (event) => {event.preventDefault(); mscroll=event.deltaY;},{passive:false});
+        setInterval(() => {LaplaceVar.socket.emit('chat message', JSON.stringify({ X: mouse_x, Y: mouse_y , leftClick: lclick, rightClick: rclick, scroll: mscroll})); mscroll=0; }, 50);
 
         const haveEvents = 'ongamepadconnected' in window;
         const controllers = {};
@@ -498,7 +508,7 @@ function init_controls(){
     
         window.addEventListener("gamepadconnected", connecthandler);
         window.addEventListener("gamepaddisconnected", disconnecthandler);
-        setInterval(updateStatus, 50);
+        // setInterval(updateStatus, 50);
 }
 
 function routeByUrl() {
@@ -518,7 +528,7 @@ function leaveRoom() {
     window.location.href = getBaseUrl();
 }
 
-var mouse_x = 0.0, mouse_y = 0.0, moved = false, mouse_stamp = 0.0;
+var mouse_x = 0.0, mouse_y = 0.0, moved = false, mouse_stamp = 0.0, lclick=0, rclick=0, mscroll=0;
 
 initUI();
 document.addEventListener('DOMContentLoaded', routeByUrl, false);
