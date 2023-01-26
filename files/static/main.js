@@ -458,7 +458,7 @@ function init_mouse() {
     document.getElementById('mainVideo').onmousedown = (e) => { mouseClickEvent(1, e) };
     document.getElementById('mainVideo').onmouseup = (e) => { mouseClickEvent(0, e) };
     document.getElementById('mainVideo').addEventListener('wheel', mouseScrollEvent, { passive: false });
-    setInterval(() => { if (!LaplaceVar.moved) { mouseSendEvent(); LaplaceVar.mscroll = 0; } }, 50);
+    setInterval(() => { if (LaplaceVar.moved) { mouseSendEvent(); LaplaceVar.mscroll = 0; } }, 50);
     setInterval(() => { if (LaplaceVar.moved && Date.now() - LaplaceVar.mouse_stamp > 5000) { LaplaceVar.moved = false; } }, 5000);
 }
 
@@ -533,7 +533,7 @@ function init_controllers() {
 function init_controls() {
     // init_mouse();
     // init_kb();
-    // init_controllers();
+    init_controllers();
 }
 
 function routeByUrl() {
