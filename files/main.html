@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -7,104 +8,111 @@
     <link rel="stylesheet" href="/static/bootstrap.min.css">
     <link rel="stylesheet" href="/static/main.css?v=0.0.5">
 </head>
+
 <body>
 
-<nav class="navbar">
-    <a class="navbar-brand text-dark" href="/">BPGC-Remote</a>
-    <span class="navbar-brand header-room" id="room-text"></span>
-</nav>
+    <nav class="navbar">
+        <a class="navbar-brand text-dark" href="/">BPGC-Remote</a>
+        <span class="navbar-brand header-room" id="room-text"></span>
+    </nav>
 
-<div class="container">
-    <div class="panel" id="panel">
+    <div class="container">
+        <div class="panel" id="panel">
 
-        <div class="separator"></div>
+            <div class="separator"></div>
 
-        <h4>Start sharing your screen</h4>
-        <form id="joinForm">
-        <button type="button" class="btn btn-dark btn-block" id="btnStream">Start sharing</button>
-        </form>
+            <h4>Start sharing your screen</h4>
+            <button type="button" class="btn btn-dark btn-block" id="btnStream">Start sharing</button>
+            <button type="button" class="btn btn-dark btn-block" id="doJoin">Join</button>
+        </div>
     </div>
-</div>
 
-<div class="container container-small" id="stream-serve-page-ui">
-    <div class="config-panel">
-        <div class="row">
-            <div class="col">
-                <h4>Screen sharing configuration</h4>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for=optionPreset>Preset</label>
-                    <br>
-                    <select name="optionPreset" id="inputOptionPreset" class="form-control"></select>
+    <div class="container container-small" id="stream-serve-page-ui">
+        <div class="config-panel">
+            <div class="row">
+                <div class="col">
+                    <h4>Screen sharing configuration</h4>
                 </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for=displayMediaOption>DisplayMedia option</label>
-                    <textarea name="displayMediaOption" id="inputDisplayMediaOption" cols="30" rows="5" class="form-control"></textarea>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for=optionPreset>Preset</label>
+                        <br>
+                        <select name="optionPreset" id="inputOptionPreset" class="form-control"></select>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for=RTPPeerConnection>RTPPeerConnection option</label>
-                    <textarea name="RTPPeerConnectionOption" id="inputRTPPeerConnectionOption" cols="30" rows="5" class="form-control"></textarea>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label id="label1" for=displayMediaOption>DisplayMedia option</label>
+                        <textarea name="displayMediaOption" id="inputDisplayMediaOption" cols="30" rows="5"
+                            class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label id="label2" for=RTPPeerConnection>RTPPeerConnection option</label>
+                        <textarea name="RTPPeerConnectionOption" id="inputRTPPeerConnectionOption" cols="30" rows="5"
+                            class="form-control"></textarea>
+                    </div>
                 </div>
             </div>
+            <hr>
+            <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStartStream">Start stream</button>
+            <span>&nbsp;</span>
+            <button type="button" class="btn btn-outline-dark btn-block-xs-only" id="btnStream"
+                onclick="leaveRoom()">Cancel</button>
         </div>
-        <hr>
-        <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStartStream">Start stream</button>
-        <span>&nbsp;</span>
-        <button type="button" class="btn btn-outline-dark btn-block-xs-only" id="btnStream" onclick="leaveRoom()">Cancel</button>
+
+        <br><br>
+    </div>
+
+    <div class="container-fluid" id="video-container">
+        <div id="video-wrapper">
+            <video id="mainVideo" autoplay playsinline>
+            </video>
+        </div>
     </div>
 
     <br><br>
-</div>
 
-<div class="container-fluid" id="video-container">
-    <div id="video-wrapper">
-        <video id="mainVideo" autoplay controls playsinline>
-        </video>
-    </div>
-</div>
-
-<br><br>
-
-<div class="container container-small" id="stream-page-ui">
-    <div class="row">
-        <div class="col-md-9">
-            <h4>How to Join this Room</h4>
-            <p class="help-text">
-                You can share the RoomID to your peers (it is on the top-right position on this page).
-            </p>
-            <a href="#" id="join-link" target="_blank"></a>
-            <br><br>
+    <div class="container container-small" id="stream-page-ui">
+        <div class="row">
+            <div class="col-md-9">
+                <h4>How to Join this Room</h4>
+                <p class="help-text">
+                    You can share the RoomID to your peers (it is on the top-right position on this page).
+                </p>
+                <a href="#" id="join-link" target="_blank"></a>
+                <br><br>
+            </div>
         </div>
+        <hr>
+        <div>
+            <h6>Status</h6>
+            <table class="table table-borderless table-sm table-meta">
+                <tr>
+                    <td>Number of connections:</td>
+                    <td id="statusNumConn">0</td>
+                </tr>
+                <tr>
+                    <td>Connected peers:</td>
+                    <td id="statusPeers"></td>
+                </tr>
+            </table>
+            <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStream" onclick="leaveRoom()">Leave
+                Room</button>
+        </div>
+        <hr>
+        <pre id="output"></pre>
     </div>
-    <hr>
-    <div>
-        <h6>Status</h6>
-        <table class="table table-borderless table-sm table-meta">
-            <tr>
-                <td>Number of connections:</td>
-                <td id="statusNumConn">0</td>
-            </tr>
-            <tr>
-                <td>Connected peers:</td>
-                <td id="statusPeers"></td>
-            </tr>
-        </table>
-        <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStream" onclick="leaveRoom()">Leave Room</button>
-    </div>
-    <hr>
-    <pre id="output"></pre>
-</div>
 
-<script src="/static/main.js?v=0.0.5"></script>
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
+    <script src="/static/main.js?v=0.0.5"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
+        integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI"
+        crossorigin="anonymous"></script>
 </body>
+
 </html>

@@ -12,47 +12,59 @@ var options = {
   rejectUnauthorized: false
 }
 
+IO.init();
 var server = https.createServer(options, app);
 var io = sio(server);
 app.use(express.static('files'))
-var s_socket_id = -1, c_socket_id = {};
+var s_socket={}, c_sockets={};
+var perms = {};
 
 
 io.of("/ws_serve").on("connection", (socket) => {
-  s_socket_id = socket.id;
+  s_socket = socket;
   socket.emit("data", JSON.stringify({ SessionID: "", Type: "newRoom", Value: "1" }));
-  socket.on("data", (data) => {io.of('/ws_connect').to(c_socket_id[JSON.parse(data).SessionID]).emit("data", data); });
+  socket.on("auth", (data)=>{
+    let SID = JSON.parse(data).SessionID;
+    perms[SID]=JSON.parse(data);
+    for(let i=0;i<JSON.parse(data).Controllers;i++){
+      if(IO.controllerCount>3) break;
+      IO.makeController();
+    }
+    c_sockets[SID].on('kb', msg => {
+      var jmsg = JSON.parse(msg);
+      if(perms[SID].Keyboard==1)
+      IO.press(jmsg.key, jmsg.code);
+    });
+    c_sockets[SID].on('ms', msg => {
+      var jmsg = JSON.parse(msg);
+      if(perms[SID].Mouse==1)
+      IO.mous(jmsg);
+    });
+    c_sockets[SID].on('ct', msg => {
+      var jmsg = JSON.parse(msg);
+      IO.cont(jmsg,perms[SID].Controllers);
+    });
+    c_sockets[SID].emit("data", JSON.stringify({ SessionID: SID, Type: "newSession", Value: "" }));
+    s_socket.emit("data", JSON.stringify({ SessionID: SID, Type: "newSession", Value: "" }));
+  });
+  socket.on("data", (data) => {c_sockets[JSON.parse(data).SessionID].emit("data", data); });
   socket.on("disconnect", () => {
-    s_socket_id = -1;
+    s_socket = {};
   });
 });
 
 
 io.of("/ws_connect").on("connection", (socket) => {
   var newSID=newSessionID();
-  c_socket_id[newSID] = socket.id;
-  socket.emit("data", JSON.stringify({ SessionID: newSID, Type: "newSession", Value: "" }));
-  io.of('/ws_serve').to(s_socket_id).emit("data", JSON.stringify({ SessionID: newSID, Type: "newSession", Value: "" }));
-  console.log(newSID);
-  socket.on("data", (data) => { io.of('/ws_serve').to(s_socket_id).emit("data", data); });
-  socket.on('kb', msg => {
-    var jmsg = JSON.parse(msg);
-    IO.press(jmsg.key, jmsg.code);
-  });
-  socket.on('ms', msg => {
-    var jmsg = JSON.parse(msg);
-    IO.mous(jmsg);
-  });
-  socket.on('ct', msg => {
-    var jmsg = JSON.parse(msg);
-    IO.cont(jmsg);
-  });
+  c_sockets[newSID] = socket;
+  socket.on("auth", (data)=>{data = JSON.parse(data); data.SessionID=newSID; s_socket.emit("auth",JSON.stringify(data))});
+  socket.on("data", (data) => { s_socket.emit("data", data); });
   // socket.on("disconnect", () => {
   // });
 });
 
 app.get('/', (req, res) => {
-  if ("id" in req.query || s_socket_id == -1) {
+  if (1||"id" in req.query || s_socket_id == -1) {
     res.sendFile(__dirname + '/files/main.html');
   }
   else {

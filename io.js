@@ -8,13 +8,10 @@ ioDevices ={}
 keyboard.config.autoDelayMs = 0;
 mouse.config.autoDelayMs = 0;
 
-
-
 ioDevices.moved = false, ioDevices.mouse_stamp = Date.now();
 ioDevices.old_a = 0, ioDevices.old_b = 0;
 ioDevices.lclicked = 0, ioDevices.rclicked = 0;
 
-setInterval(() => {if (Date.now() - ioDevices.mouse_stamp > 1000) { ioDevices.moved = false; } }, 1000);
 ioDevices.mous = (async (jmsg) => {
   let a = jmsg.X * 1920 * 0.8, b = jmsg.Y * 1080 * 0.8;
   if (ioDevices.old_a != a || ioDevices.old_b != b || jmsg.leftClick || jmsg.rightClick || jmsg.scroll) {
@@ -52,24 +49,24 @@ ioDevices.mous = (async (jmsg) => {
 });
 
 
-let controller1 = client.createX360Controller();
-controller1.connect();
-controller1.updateMode = "manual";
-let controller2 = client.createX360Controller();
-controller2.connect();
-controller2.updateMode = "manual";
-
+ioDevices.controller_set_index=0;
 ioDevices.controller_set = {};
-ioDevices.controller_set[0] = controller1;
-ioDevices.controller_set[1] = controller2;
-// var active_set = {};
-ioDevices.keySet = Object.keys(ioDevices.controller_set);
+ioDevices.controllerCount=0;
 
-ioDevices.cont = (jmsg) => {
+ioDevices.makeController = ()=>{
+  let controller1 = client.createX360Controller();
+  controller1.connect();
+  controller1.updateMode = "manual";
+  ioDevices.controller_set[ioDevices.controller_set_index] = controller1;
+  ioDevices.controller_set_index+=1;
+  ioDevices.controllerCount+=1;
+};
+
+ioDevices.cont = (jmsg, num) => {
   let jmsg_len = Object.keys(jmsg).length;
-  for (let i = 0; i < ioDevices.keySet.length; i++) {
+  for (let i = 0; i < num; i++) {
     if (i + 1 > jmsg_len) break;
-    var x = jmsg[keySet[i]];
+    var x = jmsg[Object.keys(jmsg)[i]];
     ioDevices.controller_set[i].axis.leftX.setValue(x.axes[0]);
     ioDevices.controller_set[i].axis.leftY.setValue(-x.axes[1]);
     ioDevices.controller_set[i].axis.rightX.setValue(x.axes[2]);
@@ -95,8 +92,6 @@ ioDevices.cont = (jmsg) => {
 
 ioDevices.key_status = {};
 ioDevices.key_stamp = Date.now();
-
-setInterval(() => { if (Date.now() - ioDevices.key_stamp > 1000) { let j = Object.keys(ioDevices.key_status); for (let i = 0; i < j.length; i++) { if (ioDevices.key_stamp[j[i]]) press(0, j[i]); } } }, 1000);
 
 ioDevices.press = (async (p, c) => {
   if (p == 1) {
@@ -208,5 +203,10 @@ ioDevices.press = (async (p, c) => {
 
   //await new Promise(resolve => setTimeout(resolve, 4000));
 });
+
+ioDevices.init=()=>{
+  setInterval(() => {if (Date.now() - ioDevices.mouse_stamp > 1000) { ioDevices.moved = false; } }, 1000);
+  setInterval(() => { if (Date.now() - ioDevices.key_stamp > 1000) { let j = Object.keys(ioDevices.key_status); for (let i = 0; i < j.length; i++) { if (ioDevices.key_stamp[j[i]]) press(0, j[i]); } } }, 1000);
+}
 
 module.exports=ioDevices;

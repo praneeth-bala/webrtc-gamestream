@@ -104,8 +104,6 @@ function updateRoomUI() {
     if (LaplaceVar.roomID) {
         const joinUrl = getJoinUrl(LaplaceVar.roomID);
         LaplaceVar.ui.roomText.innerHTML = '<b>RoomID:</b> #' + LaplaceVar.roomID;
-        LaplaceVar.ui.joinLinkText.innerHTML = joinUrl;
-        LaplaceVar.ui.joinLinkText.href = joinUrl;
     }
 }
 
@@ -115,8 +113,7 @@ function initUI() {
     LaplaceVar.ui.inputRoomID = document.getElementById('inputRoomID');
     LaplaceVar.ui.inputDisplayMediaOption = document.getElementById('inputDisplayMediaOption');
     LaplaceVar.ui.inputRTPPeerConnectionOption = document.getElementById('inputRTPPeerConnectionOption');
-    LaplaceVar.ui.joinLinkText = document.getElementById("join-link");
-    LaplaceVar.ui.joinForm = document.getElementById('joinForm');
+    LaplaceVar.ui.joinBtn = document.getElementById('doJoin');
     LaplaceVar.ui.output = document.getElementById('output');
     LaplaceVar.ui.panel = document.getElementById('panel');
     LaplaceVar.ui.roomText = document.getElementById('room-text');
@@ -127,12 +124,62 @@ function initUI() {
     LaplaceVar.ui.streamServePageUI = document.getElementById('stream-serve-page-ui');
     LaplaceVar.ui.video = document.getElementById('mainVideo');
     LaplaceVar.ui.videoContainer = document.getElementById('video-container');
+    LaplaceVar.ui.label1 = document.getElementById('label1');
+    LaplaceVar.ui.label2 = document.getElementById('label2');
 
-    LaplaceVar.ui.joinForm.onsubmit = async e => {
-        e.preventDefault();
-        LaplaceVar.roomID = LaplaceVar.ui.inputRoomID.value;
-        window.history.pushState('', '', getJoinUrl(LaplaceVar.roomID));
-        await doJoin(LaplaceVar.roomID);
+    LaplaceVar.ui.joinBtn.onclick = async e => {
+        // e.preventDefault();
+        // LaplaceVar.roomID = '1';
+        // window.history.pushState('', '', getJoinUrl(LaplaceVar.roomID));
+        // await doJoin(LaplaceVar.roomID);
+        LaplaceVar.ui.panel.style.display = 'none';
+        LaplaceVar.ui.streamServePageUI.style.display = 'block';
+        LaplaceVar.ui.selectOptionPreset.style.display = 'none';
+        LaplaceVar.ui.inputRTPPeerConnectionOption.style.display = 'none';
+        LaplaceVar.ui.label1.innerHTML="";
+        LaplaceVar.ui.label2.innerHTML="";
+        LaplaceVar.ui.btnStartStream.innerHTML="Join Stream";
+        LaplaceVar.ui.inputDisplayMediaOption.value = JSON.stringify({Keyboard:0, Mouse:0, Controllers:0}, null, 1);
+        print('[+] Initiate websocket');
+        LaplaceVar.socket = io('https://' + window.location.host + '/ws_connect', {
+            reconnectionDelay: 1000,
+            reconnection: true,
+            reconnectionAttemps: 10,
+            transports: ['websocket'],
+            agent: false,
+            upgrade: false,
+            rejectUnauthorized: false
+        });
+        LaplaceVar.socket.on("connect", async function () {
+            print("[+] Connected to websocket");
+        });
+        LaplaceVar.socket.on("data", async function (e) {
+            try {
+                const jsonData = JSON.parse(e);
+                if (jsonData.Type !== 'beat') {
+                    print("[+] Received websocket message: " + JSON.stringify(e));
+                }
+                if (jsonData.Type === "newSession") {
+                    await doJoin('1');
+                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Controllers>0) init_controllers();
+                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Keyboard>0) init_kb();
+                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Mouse>0) init_mouse();
+                    await newSessionJoin(jsonData.SessionID);
+                } else if (jsonData.Type === "addCallerIceCandidate") {
+                    await addCallerIceCandidate(jsonData.SessionID, JSON.parse(jsonData.Value));
+                } else if (jsonData.Type === "gotOffer") {
+                    await gotOffer(jsonData.SessionID, JSON.parse(jsonData.Value));
+                } else if (jsonData.Type === 'roomNotFound') {
+                    alert('Room not found');
+                    leaveRoom();
+                } else if (jsonData.Type === 'roomClosed') {
+                    alert('Room closed');
+                }
+            } catch (e) {
+                print("[!] ERROR: " + e);
+                console.error(e)
+            }
+        });
     };
     LaplaceVar.ui.btnStream.onclick = async () => {
         window.history.pushState('', '', getStreamUrl());
@@ -142,7 +189,10 @@ function initUI() {
         LaplaceVar.ui.streamServePageUI.style.display = 'none';
         const mediaOption = JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value);
         const pcOption = JSON.parse(LaplaceVar.ui.inputRTPPeerConnectionOption.value);
-        return startStream(mediaOption, pcOption);
+        if(Object.keys(mediaOption)[0]=="Keyboard"){
+            LaplaceVar.socket.emit("auth", LaplaceVar.ui.inputDisplayMediaOption.value);
+        }
+        else return startStream(mediaOption, pcOption);
     };
 
     for (const presetName of Object.keys(preset)) {
@@ -308,6 +358,7 @@ async function startStream(displayMediaOption, pcOption) {
             console.error(e);
         }
     });
+    LaplaceVar.socket.on("auth", function(e){console.log(JSON.parse(e));LaplaceVar.socket.emit("auth",e)});
 }
 
 async function newSessionJoin(sID) {
@@ -368,11 +419,7 @@ async function gotOffer(sID, v) {
 }
 
 async function doJoin(roomID) {
-    if (roomID) {
-        LaplaceVar.roomID = roomID;
-    } else {
-        return alert('roomID is not provided');
-    }
+    LaplaceVar.roomID = roomID;
     // normalize roomID starting with #
     LaplaceVar.roomID = LaplaceVar.roomID.startsWith('#') ? LaplaceVar.roomID.slice(1) : LaplaceVar.roomID;
     LaplaceVar.status = {
@@ -385,42 +432,6 @@ async function doJoin(roomID) {
     print('[+] Initiate media: set remote source');
     LaplaceVar.mediaStream = new MediaStream();
     LaplaceVar.ui.video.srcObject = LaplaceVar.mediaStream;
-    print('[+] Initiate websocket');
-    LaplaceVar.socket = io('https://' + window.location.host + '/ws_connect', {
-        reconnectionDelay: 1000,
-        reconnection: true,
-        reconnectionAttemps: 10,
-        transports: ['websocket'],
-        agent: false,
-        upgrade: false,
-        rejectUnauthorized: false
-    });
-    LaplaceVar.socket.on("connect", async function () {
-        print("[+] Connected to websocket");
-    });
-    LaplaceVar.socket.on("data", async function (e) {
-        try {
-            const jsonData = JSON.parse(e);
-            if (jsonData.Type !== 'beat') {
-                print("[+] Received websocket message: " + JSON.stringify(e));
-            }
-            if (jsonData.Type === "newSession") {
-                await newSessionJoin(jsonData.SessionID);
-            } else if (jsonData.Type === "addCallerIceCandidate") {
-                await addCallerIceCandidate(jsonData.SessionID, JSON.parse(jsonData.Value));
-            } else if (jsonData.Type === "gotOffer") {
-                await gotOffer(jsonData.SessionID, JSON.parse(jsonData.Value));
-            } else if (jsonData.Type === 'roomNotFound') {
-                alert('Room not found');
-                leaveRoom();
-            } else if (jsonData.Type === 'roomClosed') {
-                alert('Room closed');
-            }
-        } catch (e) {
-            print("[!] ERROR: " + e);
-            console.error(e)
-        }
-    });
 }
 
 function init_mouse() {
@@ -530,17 +541,16 @@ function init_controllers() {
     setInterval(updateStatus, 50);
 }
 
-function init_controls() {
-    // init_mouse();
-    // init_kb();
-    init_controllers();
-}
+// function init_controls() {
+//     // init_mouse();
+//     // init_kb();
+//     // init_controllers();
+// }
 
 function routeByUrl() {
     const u = new URL(window.location);
     const paramId = u.searchParams.get('id');
     if (paramId && paramId.length > 0) {
-        init_controls();
         return doJoin(paramId);
     }
     const paramStream = u.searchParams.get('stream');
