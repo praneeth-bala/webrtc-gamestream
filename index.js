@@ -20,13 +20,13 @@ var options = {
 var server = https.createServer(options, app);
 var io = sio(server);
 app.use(express.static('files'))
-var s_socket_id = -1, c_socket_id = -1;
+var s_socket_id = -1, c_socket_id = {};
 
 
 io.of("/ws_serve").on("connection", (socket) => {
   s_socket_id = socket.id;
   socket.emit("data", JSON.stringify({ SessionID: "", Type: "newRoom", Value: "1" }));
-  socket.on("data", (data) => { io.of('/ws_connect').to(c_socket_id).emit("data", data); });
+  socket.on("data", (data) => {io.of('/ws_connect').to(c_socket_id[JSON.parse(data).SessionID]).emit("data", data); });
   socket.on("disconnect", () => {
     s_socket_id = -1;
   });
@@ -34,15 +34,23 @@ io.of("/ws_serve").on("connection", (socket) => {
 
 
 io.of("/ws_connect").on("connection", (socket) => {
-  c_socket_id = socket.id;
-  socket.emit("data", JSON.stringify({ SessionID: "1", Type: "newSession", Value: "1" }));
-  io.of('/ws_serve').to(s_socket_id).emit("data", JSON.stringify({ SessionID: "1", Type: "newSession", Value: "1" }));
+  var newSID=newSessionID();
+  c_socket_id[newSID] = socket.id;
+  socket.emit("data", JSON.stringify({ SessionID: newSID, Type: "newSession", Value: "" }));
+  io.of('/ws_serve').to(s_socket_id).emit("data", JSON.stringify({ SessionID: newSID, Type: "newSession", Value: "" }));
+  console.log(newSID);
   socket.on("data", (data) => { io.of('/ws_serve').to(s_socket_id).emit("data", data); });
-  socket.on('chat message', msg => {
+  socket.on('kb', msg => {
+    var jmsg = JSON.parse(msg);
+    press(jmsg.key, jmsg.code);
+  });
+  socket.on('ms', msg => {
     var jmsg = JSON.parse(msg);
     mous(jmsg);
-    // press(x.key, x.code);
-    // cont(jmsg);
+  });
+  socket.on('ct', msg => {
+    var jmsg = JSON.parse(msg);
+    cont(jmsg);
   });
   socket.on("disconnect", () => {
     c_socket_id = -1;
@@ -63,7 +71,11 @@ server.listen(443, function () {
   console.log('Server up and running at port %s', 443);
 });
 
-
+let session=0;
+function newSessionID(){
+  session+=1;
+  return session.toString();
+}
 
 var moved = false, mouse_stamp = Date.now();
 var old_a = 0, old_b = 0;
@@ -106,18 +118,18 @@ var mous = (async (jmsg) => {
 });
 
 
-let controller1 = client.createX360Controller();
-controller1.connect();
-controller1.updateMode = "manual";
-let controller2 = client.createX360Controller();
-controller2.connect();
-controller2.updateMode = "manual";
+// let controller1 = client.createX360Controller();
+// controller1.connect();
+// controller1.updateMode = "manual";
+// let controller2 = client.createX360Controller();
+// controller2.connect();
+// controller2.updateMode = "manual";
 
-var controller_set = {};
-controller_set[0] = controller1;
-controller_set[1] = controller2;
-// var active_set = {};
-let keySet = Object.keys(controller_set);
+// var controller_set = {};
+// controller_set[0] = controller1;
+// controller_set[1] = controller2;
+// // var active_set = {};
+// let keySet = Object.keys(controller_set);
 
 var cont = (jmsg) => {
   let jmsg_len = Object.keys(jmsg).length;

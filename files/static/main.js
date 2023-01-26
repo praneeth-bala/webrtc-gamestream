@@ -423,92 +423,117 @@ async function doJoin(roomID) {
     });
 }
 
-function init_controls(){
-        function send_kdown(e) {
-            e.preventDefault();
-            LaplaceVar.socket.emit('chat message', JSON.stringify({ key: 1, code: e.keyCode }));
-        }
-        function send_kup(e) {
-            e.preventDefault();
-            LaplaceVar.socket.emit('chat message', JSON.stringify({ key: 0, code: e.keyCode }));
-        }
-        // document.addEventListener("keydown", send_kdown);
-        // document.addEventListener("keyup", send_kup);
-        
-        function mouseEvent(e) {
-            // e = Mouse click event.
-            //mouse_stamp = e.timeStamp;
-            var rect = e.target.getBoundingClientRect();
-            mouse_x = (e.clientX - rect.left) / (rect.right - rect.left); //x position within the element.
-            mouse_y = (e.clientY - rect.top) / (rect.bottom - rect.top);  //y position within the element.
-        }
+function init_mouse() {
+    function mouseSendEvent() {
+        LaplaceVar.socket.emit('ms', JSON.stringify({ X: LaplaceVar.mouse_x, Y: LaplaceVar.mouse_y, leftClick: LaplaceVar.lclick, rightClick: LaplaceVar.rclick, scroll: LaplaceVar.mscroll }));
+    }
 
-        function mouseClick(press, e){
-            e.preventDefault();
-            if(e.button==0)
-            lclick=press;
-            else
-            rclick=press;
-        }
+    function mouseMoveEvent(e) {
+        // e = Mouse click event.
+        var rect = e.target.getBoundingClientRect();
+        LaplaceVar.mouse_x = (e.clientX - rect.left) / (rect.right - rect.left); //x position within the element.
+        LaplaceVar.mouse_y = (e.clientY - rect.top) / (rect.bottom - rect.top);  //y position within the element.
+        LaplaceVar.mouse_stamp = e.timeStamp;
+        LaplaceVar.moved = true;
+    }
 
-        document.getElementById('mainVideo').onmousemove = mouseEvent;
-        document.getElementById('mainVideo').onmousedown = (e)=>{mouseClick(1,e)};
-        document.getElementById('mainVideo').onmouseup = (e)=>{mouseClick(0,e)};
-        document.getElementById('mainVideo').addEventListener('wheel', (event) => {event.preventDefault(); mscroll=event.deltaY;},{passive:false});
-        setInterval(() => {LaplaceVar.socket.emit('chat message', JSON.stringify({ X: mouse_x, Y: mouse_y , leftClick: lclick, rightClick: rclick, scroll: mscroll})); mscroll=0; }, 50);
+    function mouseScrollEvent(e) {
+        e.preventDefault();
+        LaplaceVar.mscroll = e.deltaY;
+        LaplaceVar.mouse_stamp = e.timeStamp;
+        LaplaceVar.moved = true;
+    }
 
-        const haveEvents = 'ongamepadconnected' in window;
-        const controllers = {};
-        const controller_data = {};
-    
-        function connecthandler(e) {
-            addgamepad(e.gamepad);
+    function mouseClickEvent(press, e) {
+        e.preventDefault();
+        if (e.button == 0)
+            LaplaceVar.lclick = press;
+        else
+            LaplaceVar.rclick = press;
+        mouseSendEvent();
+        LaplaceVar.mscroll = 0;
+    }
+
+    document.getElementById('mainVideo').onmousemove = mouseMoveEvent;
+    document.getElementById('mainVideo').onmousedown = (e) => { mouseClickEvent(1, e) };
+    document.getElementById('mainVideo').onmouseup = (e) => { mouseClickEvent(0, e) };
+    document.getElementById('mainVideo').addEventListener('wheel', mouseScrollEvent, { passive: false });
+    setInterval(() => { if (!LaplaceVar.moved) { mouseSendEvent(); LaplaceVar.mscroll = 0; } }, 50);
+    setInterval(() => { if (LaplaceVar.moved && Date.now() - LaplaceVar.mouse_stamp > 5000) { LaplaceVar.moved = false; } }, 5000);
+}
+
+function init_kb() {
+    function send_kdown(e) {
+        e.preventDefault();
+        LaplaceVar.socket.emit('kb', JSON.stringify({ key: 1, code: e.keyCode }));
+    }
+    function send_kup(e) {
+        e.preventDefault();
+        LaplaceVar.socket.emit('kb', JSON.stringify({ key: 0, code: e.keyCode }));
+    }
+    document.addEventListener("keydown", send_kdown);
+    document.addEventListener("keyup", send_kup);
+}
+
+function init_controllers() {
+    LaplaceVar.haveContEvents = 'ongamepadconnected' in window;
+    LaplaceVar.controllers = {};
+    LaplaceVar.controller_data = {};
+
+    function connecthandler(e) {
+        addgamepad(e.gamepad);
+    }
+
+    function addgamepad(gamepad) {
+        LaplaceVar.controllers[gamepad.index] = gamepad;
+        LaplaceVar.controller_data[gamepad.index] = { 'index': gamepad.index, 'axes': { 0: 0, 0: 0, 0: 0, 0: 0 }, 'buttons': { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0 } };
+    }
+
+    function disconnecthandler(e) {
+        removegamepad(e.gamepad);
+    }
+
+    function removegamepad(gamepad) {
+        delete LaplaceVar.controllers[gamepad.index];
+        delete LaplaceVar.controller_data[gamepad.index];
+    }
+
+    function updateStatus() {
+        if (!LaplaceVar.haveContEvents) {
+            scangamepads();
         }
-    
-        function addgamepad(gamepad) {
-            controllers[gamepad.index] = gamepad;
-            controller_data[gamepad.index] = { 'index':gamepad.index, 'axes': { 0: 0, 0: 0, 0: 0, 0: 0 }, 'buttons': { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0 } };
-        }
-    
-        function disconnecthandler(e) {
-            removegamepad(e.gamepad);
-        }
-    
-        function removegamepad(gamepad) {
-            delete controllers[gamepad.index];
-            delete controller_data[gamepad.index];
-        }
-    
-        function updateStatus() {
-            if (!haveEvents) {
-                scangamepads();
-            }
-        }
-    
-        function scangamepads() {
-            const gamepads = navigator.getGamepads();
-            for (const gamepad of gamepads) {
-                if (gamepad) { // Can be null if disconnected during the session
-                    if (gamepad.index in controllers) {
-                        controllers[gamepad.index] = gamepad;
-                        for (let i = 0; i < 4; i++) {
-                            controller_data[gamepad.index].axes[i] = gamepad.axes[i];
-                        }
-                        for (let i = 0; i < 16; i++) {
-                            controller_data[gamepad.index].buttons[i] = gamepad.buttons[i].value;
-                        }
-                    } else {
-                        addgamepad(gamepad);
+    }
+
+    function scangamepads() {
+        const gamepads = navigator.getGamepads();
+        for (const gamepad of gamepads) {
+            if (gamepad) { // Can be null if disconnected during the session
+                if (gamepad.index in LaplaceVar.controllers) {
+                    LaplaceVar.controllers[gamepad.index] = gamepad;
+                    for (let i = 0; i < 4; i++) {
+                        LaplaceVar.controller_data[gamepad.index].axes[i] = gamepad.axes[i];
                     }
+                    for (let i = 0; i < 16; i++) {
+                        LaplaceVar.controller_data[gamepad.index].buttons[i] = gamepad.buttons[i].value;
+                    }
+                } else {
+                    addgamepad(gamepad);
                 }
             }
-            if (Object.keys(controller_data).length != 0)
-                LaplaceVar.socket.emit('chat message', JSON.stringify(controller_data));
         }
-    
-        window.addEventListener("gamepadconnected", connecthandler);
-        window.addEventListener("gamepaddisconnected", disconnecthandler);
-        // setInterval(updateStatus, 50);
+        if (Object.keys(LaplaceVar.controller_data).length != 0)
+            LaplaceVar.socket.emit('ct', JSON.stringify(LaplaceVar.controller_data));
+    }
+
+    window.addEventListener("gamepadconnected", connecthandler);
+    window.addEventListener("gamepaddisconnected", disconnecthandler);
+    setInterval(updateStatus, 50);
+}
+
+function init_controls() {
+    // init_mouse();
+    // init_kb();
+    // init_controllers();
 }
 
 function routeByUrl() {
@@ -528,7 +553,13 @@ function leaveRoom() {
     window.location.href = getBaseUrl();
 }
 
-var mouse_x = 0.0, mouse_y = 0.0, moved = false, mouse_stamp = 0.0, lclick=0, rclick=0, mscroll=0;
+LaplaceVar.mouse_x = 0.0;
+LaplaceVar.mouse_y = 0.0;
+LaplaceVar.moved = false;
+LaplaceVar.mouse_stamp = 0.0;
+LaplaceVar.lclick = 0;
+LaplaceVar.rclick = 0;
+LaplaceVar.mscroll = 0;
 
 initUI();
 document.addEventListener('DOMContentLoaded', routeByUrl, false);
