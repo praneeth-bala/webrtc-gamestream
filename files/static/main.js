@@ -1,4 +1,4 @@
-// todo: deprecate
+//ICE configs
 const iceConfig = {
     iceServers: [{
         urls: [
@@ -9,6 +9,7 @@ const iceConfig = {
     iceCandidatePoolSize: 10,
 };
 
+//Video Presets
 const displayMediaOptions = {
     noConstraint: {
         video: true,
@@ -30,6 +31,7 @@ const displayMediaOptions = {
     },
 };
 
+//WebRTC presets
 const rtpPeerConnectionOptions = {
     stunGoogle: {
         iceServers: [{
@@ -45,6 +47,7 @@ const rtpPeerConnectionOptions = {
     }
 };
 
+//Setup presets
 const preset = {
     balanced: {
         displayMediaOption: displayMediaOptions.v720p30,
@@ -72,16 +75,14 @@ const preset = {
     },
 };
 
-const LaplaceVar = {
+//Main Object
+const BPGCRemote = {
     ui: {},
 };
 
-function avg(arr) {
-    return (arr.reduce((a, b) => a + b, 0) / arr.length) | 0
-}
-
+//Print to custom console for debugging
 function print(s) {
-    LaplaceVar.ui.output.innerHTML += s + '\n';
+    BPGCRemote.ui.output.innerHTML += s + '\n';
 }
 
 function getBaseUrl() {
@@ -96,52 +97,54 @@ function getJoinUrl(roomID) {
     return `${getBaseUrl()}/?id=${roomID}`;
 }
 
+//Switch from setup page to video page
 function updateRoomUI() {
-    LaplaceVar.ui.panel.style.display = 'none';
-    LaplaceVar.ui.videoContainer.style.display = 'block';
-    LaplaceVar.ui.streamPageUI.style.display = 'block';
+    BPGCRemote.ui.panel.style.display = 'none';
+    BPGCRemote.ui.videoContainer.style.display = 'block';
+    BPGCRemote.ui.streamPageUI.style.display = 'block';
 
-    if (LaplaceVar.roomID) {
-        const joinUrl = getJoinUrl(LaplaceVar.roomID);
-        LaplaceVar.ui.roomText.innerHTML = '<b>RoomID:</b> #' + LaplaceVar.roomID;
+    if (BPGCRemote.roomID) {
+        BPGCRemote.ui.roomText.innerHTML = '<b>RoomID:</b> #' + BPGCRemote.roomID;
     }
 }
 
+//Main UI initialization
 function initUI() {
-    LaplaceVar.ui.btnStream = document.getElementById('btnStream');
-    LaplaceVar.ui.btnStartStream = document.getElementById('btnStartStream');
-    LaplaceVar.ui.inputRoomID = document.getElementById('inputRoomID');
-    LaplaceVar.ui.inputDisplayMediaOption = document.getElementById('inputDisplayMediaOption');
-    LaplaceVar.ui.inputRTPPeerConnectionOption = document.getElementById('inputRTPPeerConnectionOption');
-    LaplaceVar.ui.joinBtn = document.getElementById('doJoin');
-    LaplaceVar.ui.output = document.getElementById('output');
-    LaplaceVar.ui.panel = document.getElementById('panel');
-    LaplaceVar.ui.roomText = document.getElementById('room-text');
-    LaplaceVar.ui.statusNumConn = document.getElementById('statusNumConn');
-    LaplaceVar.ui.statusPeers = document.getElementById('statusPeers');
-    LaplaceVar.ui.selectOptionPreset = document.getElementById('inputOptionPreset');
-    LaplaceVar.ui.streamPageUI = document.getElementById('stream-page-ui');
-    LaplaceVar.ui.streamServePageUI = document.getElementById('stream-serve-page-ui');
-    LaplaceVar.ui.video = document.getElementById('mainVideo');
-    LaplaceVar.ui.videoContainer = document.getElementById('video-container');
-    LaplaceVar.ui.label1 = document.getElementById('label1');
-    LaplaceVar.ui.label2 = document.getElementById('label2');
+    BPGCRemote.ui.btnStream = document.getElementById('btnStream');
+    BPGCRemote.ui.btnStartStream = document.getElementById('btnStartStream');
+    BPGCRemote.ui.inputRoomID = document.getElementById('inputRoomID');
+    BPGCRemote.ui.inputDisplayMediaOption = document.getElementById('inputDisplayMediaOption');
+    BPGCRemote.ui.inputRTPPeerConnectionOption = document.getElementById('inputRTPPeerConnectionOption');
+    BPGCRemote.ui.joinBtn = document.getElementById('doJoin');
+    BPGCRemote.ui.output = document.getElementById('output');
+    BPGCRemote.ui.panel = document.getElementById('panel');
+    BPGCRemote.ui.roomText = document.getElementById('room-text');
+    BPGCRemote.ui.statusNumConn = document.getElementById('statusNumConn');
+    BPGCRemote.ui.statusPeers = document.getElementById('statusPeers');
+    BPGCRemote.ui.selectOptionPreset = document.getElementById('inputOptionPreset');
+    BPGCRemote.ui.streamPageUI = document.getElementById('stream-page-ui');
+    BPGCRemote.ui.streamServePageUI = document.getElementById('stream-serve-page-ui');
+    BPGCRemote.ui.video = document.getElementById('mainVideo');
+    BPGCRemote.ui.videoContainer = document.getElementById('video-container');
+    BPGCRemote.ui.label1 = document.getElementById('label1');
+    BPGCRemote.ui.label2 = document.getElementById('label2');
 
-    LaplaceVar.ui.joinBtn.onclick = async e => {
-        // e.preventDefault();
-        // LaplaceVar.roomID = '1';
-        // window.history.pushState('', '', getJoinUrl(LaplaceVar.roomID));
-        // await doJoin(LaplaceVar.roomID);
-        LaplaceVar.ui.panel.style.display = 'none';
-        LaplaceVar.ui.streamServePageUI.style.display = 'block';
-        LaplaceVar.ui.selectOptionPreset.style.display = 'none';
-        LaplaceVar.ui.inputRTPPeerConnectionOption.style.display = 'none';
-        LaplaceVar.ui.label1.innerHTML="";
-        LaplaceVar.ui.label2.innerHTML="";
-        LaplaceVar.ui.btnStartStream.innerHTML="Join Stream";
-        LaplaceVar.ui.inputDisplayMediaOption.value = JSON.stringify({Keyboard:0, Mouse:0, Controllers:0}, null, 1);
+    //Join as viewer
+    BPGCRemote.ui.joinBtn.onclick = async e => {
+        BPGCRemote.ui.panel.style.display = 'none';
+        BPGCRemote.ui.streamServePageUI.style.display = 'block';
+        BPGCRemote.ui.selectOptionPreset.style.display = 'none';
+        BPGCRemote.ui.inputRTPPeerConnectionOption.style.display = 'none';
+        BPGCRemote.ui.label1.innerHTML = "";
+        BPGCRemote.ui.label2.innerHTML = "";
+        BPGCRemote.ui.btnStartStream.innerHTML = "Join Stream";
+
+        //Available IO devices
+        BPGCRemote.ui.inputDisplayMediaOption.value = JSON.stringify({ Keyboard: 0, Mouse: 0, Controllers: 0 }, null, 1);
+
+        //Setup websocket
         print('[+] Initiate websocket');
-        LaplaceVar.socket = io('https://' + window.location.host + '/ws_connect', {
+        BPGCRemote.socket = io('https://' + window.location.host + '/ws_connect', {
             reconnectionDelay: 1000,
             reconnection: true,
             reconnectionAttemps: 10,
@@ -150,20 +153,28 @@ function initUI() {
             upgrade: false,
             rejectUnauthorized: false
         });
-        LaplaceVar.socket.on("connect", async function () {
+
+        //Connection
+        BPGCRemote.socket.on("connect", async function () {
             print("[+] Connected to websocket");
         });
-        LaplaceVar.socket.on("data", async function (e) {
+
+        //Socket downstream
+        BPGCRemote.socket.on("data", async function (e) {
             try {
                 const jsonData = JSON.parse(e);
-                if (jsonData.Type !== 'beat') {
-                    print("[+] Received websocket message: " + JSON.stringify(e));
-                }
+                //Log
+                print("[+] Received websocket message: " + JSON.stringify(e));
+
+                //If auth succesful, start session
                 if (jsonData.Type === "newSession") {
                     await doJoin('1');
-                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Controllers>0) init_controllers();
-                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Keyboard>0) init_kb();
-                    if(JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value).Mouse>0) init_mouse();
+
+                    //Setup respective IO polling
+                    if (JSON.parse(BPGCRemote.ui.inputDisplayMediaOption.value).Controllers > 0) init_controllers();
+                    if (JSON.parse(BPGCRemote.ui.inputDisplayMediaOption.value).Keyboard > 0) init_kb();
+                    if (JSON.parse(BPGCRemote.ui.inputDisplayMediaOption.value).Mouse > 0) init_mouse();
+
                     await newSessionJoin(jsonData.SessionID);
                 } else if (jsonData.Type === "addCallerIceCandidate") {
                     await addCallerIceCandidate(jsonData.SessionID, JSON.parse(jsonData.Value));
@@ -181,36 +192,44 @@ function initUI() {
             }
         });
     };
-    LaplaceVar.ui.btnStream.onclick = async () => {
+
+    //Join as streamer
+    BPGCRemote.ui.btnStream.onclick = async () => {
         window.history.pushState('', '', getStreamUrl());
         await doStream();
     };
-    LaplaceVar.ui.btnStartStream.onclick = () => {
-        LaplaceVar.ui.streamServePageUI.style.display = 'none';
-        const mediaOption = JSON.parse(LaplaceVar.ui.inputDisplayMediaOption.value);
-        const pcOption = JSON.parse(LaplaceVar.ui.inputRTPPeerConnectionOption.value);
-        if(Object.keys(mediaOption)[0]=="Keyboard"){
-            LaplaceVar.socket.emit("auth", LaplaceVar.ui.inputDisplayMediaOption.value);
+
+    //Confirm stream settings/ Join settings
+    BPGCRemote.ui.btnStartStream.onclick = () => {
+        BPGCRemote.ui.streamServePageUI.style.display = 'none';
+        const mediaOption = JSON.parse(BPGCRemote.ui.inputDisplayMediaOption.value);
+        const pcOption = JSON.parse(BPGCRemote.ui.inputRTPPeerConnectionOption.value);
+
+        //If viewer
+        if (Object.keys(mediaOption)[0] == "Keyboard") {
+            //Ask for granting permissions
+            BPGCRemote.socket.emit("auth", BPGCRemote.ui.inputDisplayMediaOption.value);
         }
         else return startStream(mediaOption, pcOption);
     };
 
+    //Setup presets UI
     for (const presetName of Object.keys(preset)) {
         const optionElement = document.createElement('option');
         optionElement.appendChild(document.createTextNode(presetName));
         optionElement.value = presetName;
-        LaplaceVar.ui.selectOptionPreset.appendChild(optionElement);
+        BPGCRemote.ui.selectOptionPreset.appendChild(optionElement);
     }
-    LaplaceVar.ui.selectOptionPreset.onchange = () => {
-        const v = LaplaceVar.ui.selectOptionPreset.value;
+    BPGCRemote.ui.selectOptionPreset.onchange = () => {
+        const v = BPGCRemote.ui.selectOptionPreset.value;
         if (preset[v] != null) {
-            LaplaceVar.ui.inputDisplayMediaOption.value = JSON.stringify(preset[v].displayMediaOption, null, 1);
-            LaplaceVar.ui.inputRTPPeerConnectionOption.value = JSON.stringify(preset[v].rtpPeerConnectionOption, null, 1);
+            BPGCRemote.ui.inputDisplayMediaOption.value = JSON.stringify(preset[v].displayMediaOption, null, 1);
+            BPGCRemote.ui.inputRTPPeerConnectionOption.value = JSON.stringify(preset[v].rtpPeerConnectionOption, null, 1);
         }
     };
     const defaultPresetValue = Object.keys(preset)[4];
-    LaplaceVar.ui.inputDisplayMediaOption.value = JSON.stringify(preset[defaultPresetValue].displayMediaOption, null, 1);
-    LaplaceVar.ui.inputRTPPeerConnectionOption.value = JSON.stringify(preset[defaultPresetValue].rtpPeerConnectionOption, null, 1);
+    BPGCRemote.ui.inputDisplayMediaOption.value = JSON.stringify(preset[defaultPresetValue].displayMediaOption, null, 1);
+    BPGCRemote.ui.inputRTPPeerConnectionOption.value = JSON.stringify(preset[defaultPresetValue].rtpPeerConnectionOption, null, 1);
 
 
     print("Logs:");
@@ -218,67 +237,68 @@ function initUI() {
 }
 
 function updateStatusUIStream() {
-    LaplaceVar.status.peers = Object.keys(LaplaceVar.pcs).map(s => s);
-    LaplaceVar.status.numConn = LaplaceVar.status.peers.length;
-    LaplaceVar.ui.statusPeers.innerHTML = LaplaceVar.status.peers.map(s => s).join(', ');
-    LaplaceVar.ui.statusNumConn.innerHTML = LaplaceVar.status.numConn;
+    BPGCRemote.status.peers = Object.keys(BPGCRemote.pcs).map(s => s);
+    BPGCRemote.status.numConn = BPGCRemote.status.peers.length;
+    BPGCRemote.ui.statusPeers.innerHTML = BPGCRemote.status.peers.map(s => s).join(', ');
+    BPGCRemote.ui.statusNumConn.innerHTML = BPGCRemote.status.numConn;
 }
 
 function updateStatusUIJoin() {
-    LaplaceVar.ui.statusNumConn.innerHTML = LaplaceVar.status.numConn;
-    LaplaceVar.ui.statusPeers.innerHTML = LaplaceVar.status.peers.map(s => LaplaceVar.sessionID.endsWith(s) ? s + ' (you)' : s).join(', ');
+    BPGCRemote.ui.statusNumConn.innerHTML = BPGCRemote.status.numConn;
+    BPGCRemote.ui.statusPeers.innerHTML = BPGCRemote.status.peers.map(s => BPGCRemote.sessionID.endsWith(s) ? s + ' (you)' : s).join(', ');
 }
 
 async function newRoom(rID) {
     print("[+] Get room ID: " + rID);
-    LaplaceVar.roomID = rID;
+    BPGCRemote.roomID = rID;
     updateRoomUI();
 }
 
+//Called on server for each new client
 async function newSessionStream(sessionID, pcOption) {
     print('[+] New session: ' + sessionID);
-    LaplaceVar.pcs[sessionID] = new RTCPeerConnection(pcOption);
-    LaplaceVar.pcs[sessionID].onicecandidate = e => {
+    BPGCRemote.pcs[sessionID] = new RTCPeerConnection(pcOption);
+    BPGCRemote.pcs[sessionID].onicecandidate = e => {
         print('[+] Debug onicecandidate: ' + JSON.stringify(e.candidate));
         if (!e.candidate) {
             print('[+] Debug onicecandidate: got final candidate!');
             return;
         }
         print('[+] Send addCallerIceCandidate to websocket: ' + JSON.stringify(e.candidate));
-        LaplaceVar.socket.emit("data", JSON.stringify({
+        BPGCRemote.socket.emit("data", JSON.stringify({
             Type: "addCallerIceCandidate",
             SessionID: sessionID,
             Value: JSON.stringify(e.candidate),
         }))
     };
-    LaplaceVar.pcs[sessionID].oniceconnectionstatechange = () => {
-        print('[+] Debug oniceconnectionstatechange ' + LaplaceVar.pcs[sessionID].iceConnectionState);
-        if (LaplaceVar.pcs[sessionID].iceConnectionState === 'disconnected') {
+    BPGCRemote.pcs[sessionID].oniceconnectionstatechange = () => {
+        print('[+] Debug oniceconnectionstatechange ' + BPGCRemote.pcs[sessionID].iceConnectionState);
+        if (BPGCRemote.pcs[sessionID].iceConnectionState === 'disconnected') {
             print("[-] Disconnected with a Peer " + sessionID);
-            LaplaceVar.pcs[sessionID].close();
-            delete LaplaceVar.pcs[sessionID];
-            delete LaplaceVar.dataChannels[sessionID];
-            delete LaplaceVar.pings[sessionID];
-            delete LaplaceVar.pingHistories[sessionID];
+            BPGCRemote.pcs[sessionID].close();
+            delete BPGCRemote.pcs[sessionID];
+            delete BPGCRemote.dataChannels[sessionID];
+            delete BPGCRemote.pings[sessionID];
+            delete BPGCRemote.pingHistories[sessionID];
             updateStatusUIStream();
         }
     };
     updateStatusUIStream();
 
-    LaplaceVar.mediaStream.getTracks().forEach(track => {
-        LaplaceVar.pcs[sessionID].addTrack(track, LaplaceVar.mediaStream);
+    BPGCRemote.mediaStream.getTracks().forEach(track => {
+        BPGCRemote.pcs[sessionID].addTrack(track, BPGCRemote.mediaStream);
     });
 
 
     print('[+] Creating offer');
-    const offer = await LaplaceVar.pcs[sessionID].createOffer({
+    const offer = await BPGCRemote.pcs[sessionID].createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
     });
-    await LaplaceVar.pcs[sessionID].setLocalDescription(offer);
+    await BPGCRemote.pcs[sessionID].setLocalDescription(offer);
 
     print('[+] Send offer to websocket: ' + JSON.stringify(offer));
-    LaplaceVar.socket.emit("data", JSON.stringify({
+    BPGCRemote.socket.emit("data", JSON.stringify({
         Type: "gotOffer",
         SessionID: sessionID,
         Value: JSON.stringify(offer),
@@ -287,27 +307,28 @@ async function newSessionStream(sessionID, pcOption) {
 
 async function addCalleeIceCandidate(sessionID, v) {
     print('[+] Debug addCalleeIceCandidate ' + sessionID + ' ' + JSON.stringify(v));
-    return LaplaceVar.pcs[sessionID].addIceCandidate(v);
+    return BPGCRemote.pcs[sessionID].addIceCandidate(v);
 }
 
 async function gotAnswer(sessionID, v) {
     print('[+] Debug gotAnswer ' + sessionID + ' ' + JSON.stringify(v));
-    return LaplaceVar.pcs[sessionID].setRemoteDescription(new RTCSessionDescription(v));
+    return BPGCRemote.pcs[sessionID].setRemoteDescription(new RTCSessionDescription(v));
 }
 
 async function doStream() {
-    LaplaceVar.ui.panel.style.display = 'none';
-    LaplaceVar.ui.streamServePageUI.style.display = 'block';
+    BPGCRemote.ui.panel.style.display = 'none';
+    BPGCRemote.ui.streamServePageUI.style.display = 'block';
 }
 
 
+//Start streaming
 async function startStream(displayMediaOption, pcOption) {
-    LaplaceVar.pcs = {}; // contains RTCPeerConnections
-    LaplaceVar.dataChannels = {};
-    LaplaceVar.pings = {};
-    LaplaceVar.pingHistories = {};
-    LaplaceVar.pingIntervals = {};
-    LaplaceVar.status = {
+    BPGCRemote.pcs = {}; // contains RTCPeerConnections
+    BPGCRemote.dataChannels = {};
+    BPGCRemote.pings = {};
+    BPGCRemote.pingHistories = {};
+    BPGCRemote.pingIntervals = {};
+    BPGCRemote.status = {
         numConn: 0,
         peers: [],
     };
@@ -317,16 +338,16 @@ async function startStream(displayMediaOption, pcOption) {
     print('[+] Initiate media: capture display media');
     try {
         // noinspection JSUnresolvedFunction
-        LaplaceVar.mediaStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOption);
+        BPGCRemote.mediaStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOption);
     } catch {
         alert('Streaming from this device is not supported. \n\nGoogle reference: getDisplayMedia');
         leaveRoom()
     }
-    LaplaceVar.ui.video.srcObject = LaplaceVar.mediaStream;
-    LaplaceVar.ui.video.muted = true; // prevent duplicate sound played
+    BPGCRemote.ui.video.srcObject = BPGCRemote.mediaStream;
+    BPGCRemote.ui.video.muted = true; // prevent duplicate sound played
 
     print('[+] Initiate websocket');
-    LaplaceVar.socket = io('https://' + window.location.host + '/ws_serve', {
+    BPGCRemote.socket = io('https://' + window.location.host + '/ws_serve', {
         reconnectionDelay: 1000,
         reconnection: true,
         reconnectionAttemps: 10,
@@ -335,15 +356,13 @@ async function startStream(displayMediaOption, pcOption) {
         upgrade: false,
         rejectUnauthorized: false
     });
-    LaplaceVar.socket.on("connect", function () {
+    BPGCRemote.socket.on("connect", function () {
         print("[+] Connected to websocket");
     });
-    LaplaceVar.socket.on("data", async function (e) {
+    BPGCRemote.socket.on("data", async function (e) {
         try {
             const jsonData = JSON.parse(e);
-            if (jsonData.Type !== 'beat') {
-                print("[+] Received websocket message: " + JSON.stringify(e));
-            }
+            print("[+] Received websocket message: " + JSON.stringify(e));
             if (jsonData.Type === "newRoom") {
                 await newRoom(jsonData.Value);
             } else if (jsonData.Type === "newSession") {
@@ -358,71 +377,77 @@ async function startStream(displayMediaOption, pcOption) {
             console.error(e);
         }
     });
-    LaplaceVar.socket.on("auth", function(e){console.log(JSON.parse(e));LaplaceVar.socket.emit("auth",e)});
+
+    //Grant requested permission for viewers
+    BPGCRemote.socket.on("auth", function (e) { console.log(JSON.parse(e)); BPGCRemote.socket.emit("auth", e) });
 }
 
+
+//Called on viewer side to start stream
 async function newSessionJoin(sID) {
     print('[+] New session: ' + sID);
-    LaplaceVar.sessionID = sID;
-    LaplaceVar.pc = new RTCPeerConnection(iceConfig);
-    LaplaceVar.pc.onicecandidate = e => {
+    BPGCRemote.sessionID = sID;
+    BPGCRemote.pc = new RTCPeerConnection(iceConfig);
+    BPGCRemote.pc.onicecandidate = e => {
         print('[+] Debug onicecandidate: ' + JSON.stringify(e.candidate));
         if (!e.candidate) {
             print('[+] Debug onicecandidate: got final candidate!');
             return;
         }
         print('[+] Send addCalleeIceCandidate to websocket: ' + JSON.stringify(e.candidate));
-        LaplaceVar.socket.emit("data", JSON.stringify({
+        BPGCRemote.socket.emit("data", JSON.stringify({
             Type: "addCalleeIceCandidate",
-            SessionID: LaplaceVar.sessionID,
+            SessionID: BPGCRemote.sessionID,
             Value: JSON.stringify(e.candidate),
         }))
     };
-    LaplaceVar.pc.oniceconnectionstatechange = () => {
-        print('[+] pc.oniceconnectionstatechange ' + LaplaceVar.pc.iceConnectionState);
-        if (LaplaceVar.pc.iceConnectionState === 'disconnected') {
+    BPGCRemote.pc.oniceconnectionstatechange = () => {
+        print('[+] pc.oniceconnectionstatechange ' + BPGCRemote.pc.iceConnectionState);
+        if (BPGCRemote.pc.iceConnectionState === 'disconnected') {
             print("[-] Disconnected with Peer");
-            LaplaceVar.pc.close();
-            LaplaceVar.pc = null;
+            BPGCRemote.pc.close();
+            BPGCRemote.pc = null;
         }
     };
-    LaplaceVar.pc.ontrack = event => {
-        LaplaceVar.mediaStream.addTrack(event.track);
-        LaplaceVar.ui.video.srcObject = LaplaceVar.mediaStream;
+    BPGCRemote.pc.ontrack = event => {
+        BPGCRemote.mediaStream.addTrack(event.track);
+        BPGCRemote.ui.video.srcObject = BPGCRemote.mediaStream;
         try {
-            LaplaceVar.ui.video.play();
+            BPGCRemote.ui.video.play();
         } catch { }
     };
 }
 
 async function addCallerIceCandidate(sID, v) {
     print('[+] Debug addCallerIceCandidate ' + sID + ' ' + JSON.stringify(v));
-    if (LaplaceVar.sessionID !== sID) return;
-    return LaplaceVar.pc.addIceCandidate(v);
+    if (BPGCRemote.sessionID !== sID) return;
+    return BPGCRemote.pc.addIceCandidate(v);
 }
 
 async function gotOffer(sID, v) {
     print('[+] Debug gotOffer ' + sID + ' ' + JSON.stringify(v));
-    if (LaplaceVar.sessionID !== sID) return;
-    await LaplaceVar.pc.setRemoteDescription(new RTCSessionDescription(v));
+    if (BPGCRemote.sessionID !== sID) return;
+    await BPGCRemote.pc.setRemoteDescription(new RTCSessionDescription(v));
 
     print('[+] Create answer');
-    const answer = await LaplaceVar.pc.createAnswer();
-    await LaplaceVar.pc.setLocalDescription(answer);
+    const answer = await BPGCRemote.pc.createAnswer();
+    await BPGCRemote.pc.setLocalDescription(answer);
 
     print('[+] Send answer to websocket: ' + JSON.stringify(answer));
-    LaplaceVar.socket.emit("data", JSON.stringify({
+    BPGCRemote.socket.emit("data", JSON.stringify({
         Type: "gotAnswer",
-        SessionID: LaplaceVar.sessionID,
+        SessionID: BPGCRemote.sessionID,
         Value: JSON.stringify(answer),
     }))
 }
 
+
+//Join as viewer
 async function doJoin(roomID) {
-    LaplaceVar.roomID = roomID;
+    BPGCRemote.roomID = roomID;
     // normalize roomID starting with #
-    LaplaceVar.roomID = LaplaceVar.roomID.startsWith('#') ? LaplaceVar.roomID.slice(1) : LaplaceVar.roomID;
-    LaplaceVar.status = {
+    BPGCRemote.roomID = BPGCRemote.roomID.startsWith('#') ? BPGCRemote.roomID.slice(1) : BPGCRemote.roomID;
+    BPGCRemote.status = {
         numConn: 0,
         peers: [],
     };
@@ -430,74 +455,89 @@ async function doJoin(roomID) {
     updateRoomUI();
 
     print('[+] Initiate media: set remote source');
-    LaplaceVar.mediaStream = new MediaStream();
-    LaplaceVar.ui.video.srcObject = LaplaceVar.mediaStream;
+    BPGCRemote.mediaStream = new MediaStream();
+    BPGCRemote.ui.video.srcObject = BPGCRemote.mediaStream;
 }
 
+//Mouse polling
 function init_mouse() {
+
+    //Send on socket
     function mouseSendEvent() {
-        LaplaceVar.socket.emit('ms', JSON.stringify({ X: LaplaceVar.mouse_x, Y: LaplaceVar.mouse_y, leftClick: LaplaceVar.lclick, rightClick: LaplaceVar.rclick, scroll: LaplaceVar.mscroll }));
+        BPGCRemote.socket.emit('ms', JSON.stringify({ X: BPGCRemote.mouse_x, Y: BPGCRemote.mouse_y, leftClick: BPGCRemote.lclick, rightClick: BPGCRemote.rclick, scroll: BPGCRemote.mscroll }));
     }
 
+    //Mouse move
     function mouseMoveEvent(e) {
         // e = Mouse click event.
         var rect = e.target.getBoundingClientRect();
-        LaplaceVar.mouse_x = (e.clientX - rect.left) / (rect.right - rect.left); //x position within the element.
-        LaplaceVar.mouse_y = (e.clientY - rect.top) / (rect.bottom - rect.top);  //y position within the element.
-        LaplaceVar.mouse_stamp = e.timeStamp;
-        LaplaceVar.moved = true;
+        BPGCRemote.mouse_x = (e.clientX - rect.left) / (rect.right - rect.left); //x position within the element.
+        BPGCRemote.mouse_y = (e.clientY - rect.top) / (rect.bottom - rect.top);  //y position within the element.
+        BPGCRemote.mouse_stamp = e.timeStamp;
+        BPGCRemote.moved = true;
     }
 
+    //Scroll
     function mouseScrollEvent(e) {
         e.preventDefault();
-        LaplaceVar.mscroll = e.deltaY;
-        LaplaceVar.mouse_stamp = e.timeStamp;
-        LaplaceVar.moved = true;
+        BPGCRemote.mscroll = e.deltaY;
+        BPGCRemote.mouse_stamp = e.timeStamp;
+        BPGCRemote.moved = true;
     }
 
+    //Click
     function mouseClickEvent(press, e) {
         e.preventDefault();
         if (e.button == 0)
-            LaplaceVar.lclick = press;
+            BPGCRemote.lclick = press;
         else
-            LaplaceVar.rclick = press;
+            BPGCRemote.rclick = press;
         mouseSendEvent();
-        LaplaceVar.mscroll = 0;
+        BPGCRemote.mscroll = 0;
     }
 
+    //Setup listeners
     document.getElementById('mainVideo').onmousemove = mouseMoveEvent;
     document.getElementById('mainVideo').onmousedown = (e) => { mouseClickEvent(1, e) };
     document.getElementById('mainVideo').onmouseup = (e) => { mouseClickEvent(0, e) };
     document.getElementById('mainVideo').addEventListener('wheel', mouseScrollEvent, { passive: false });
-    setInterval(() => { if (LaplaceVar.moved) { mouseSendEvent(); LaplaceVar.mscroll = 0; } }, 50);
-    setInterval(() => { if (LaplaceVar.moved && Date.now() - LaplaceVar.mouse_stamp > 5000) { LaplaceVar.moved = false; } }, 5000);
+
+    //Intervals to check for idle state and send data
+    setInterval(() => { if (BPGCRemote.moved) { mouseSendEvent(); BPGCRemote.mscroll = 0; } }, 50);
+    setInterval(() => { if (BPGCRemote.moved && Date.now() - BPGCRemote.mouse_stamp > 5000) { BPGCRemote.moved = false; } }, 5000);
 }
 
+
+//Setup keyboard
 function init_kb() {
+    //Press
     function send_kdown(e) {
         e.preventDefault();
-        LaplaceVar.socket.emit('kb', JSON.stringify({ key: 1, code: e.keyCode }));
+        BPGCRemote.socket.emit('kb', JSON.stringify({ key: 1, code: e.keyCode }));
     }
+    //Release
     function send_kup(e) {
         e.preventDefault();
-        LaplaceVar.socket.emit('kb', JSON.stringify({ key: 0, code: e.keyCode }));
+        BPGCRemote.socket.emit('kb', JSON.stringify({ key: 0, code: e.keyCode }));
     }
+    //Listeners
     document.addEventListener("keydown", send_kdown);
     document.addEventListener("keyup", send_kup);
 }
 
+//Setup controllers
 function init_controllers() {
-    LaplaceVar.haveContEvents = 'ongamepadconnected' in window;
-    LaplaceVar.controllers = {};
-    LaplaceVar.controller_data = {};
+    BPGCRemote.haveContEvents = 'ongamepadconnected' in window;
+    BPGCRemote.controllers = {};
+    BPGCRemote.controller_data = {};
 
     function connecthandler(e) {
         addgamepad(e.gamepad);
     }
 
     function addgamepad(gamepad) {
-        LaplaceVar.controllers[gamepad.index] = gamepad;
-        LaplaceVar.controller_data[gamepad.index] = { 'index': gamepad.index, 'axes': { 0: 0, 0: 0, 0: 0, 0: 0 }, 'buttons': { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0 } };
+        BPGCRemote.controllers[gamepad.index] = gamepad;
+        BPGCRemote.controller_data[gamepad.index] = { 'index': gamepad.index, 'axes': { 0: 0, 0: 0, 0: 0, 0: 0 }, 'buttons': { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0, 15: 0, 16: 0 } };
     }
 
     function disconnecthandler(e) {
@@ -505,12 +545,12 @@ function init_controllers() {
     }
 
     function removegamepad(gamepad) {
-        delete LaplaceVar.controllers[gamepad.index];
-        delete LaplaceVar.controller_data[gamepad.index];
+        delete BPGCRemote.controllers[gamepad.index];
+        delete BPGCRemote.controller_data[gamepad.index];
     }
 
     function updateStatus() {
-        if (!LaplaceVar.haveContEvents) {
+        if (!BPGCRemote.haveContEvents) {
             scangamepads();
         }
     }
@@ -519,25 +559,28 @@ function init_controllers() {
         const gamepads = navigator.getGamepads();
         for (const gamepad of gamepads) {
             if (gamepad) { // Can be null if disconnected during the session
-                if (gamepad.index in LaplaceVar.controllers) {
-                    LaplaceVar.controllers[gamepad.index] = gamepad;
+                if (gamepad.index in BPGCRemote.controllers) {
+                    BPGCRemote.controllers[gamepad.index] = gamepad;
                     for (let i = 0; i < 4; i++) {
-                        LaplaceVar.controller_data[gamepad.index].axes[i] = gamepad.axes[i];
+                        BPGCRemote.controller_data[gamepad.index].axes[i] = gamepad.axes[i];
                     }
                     for (let i = 0; i < 16; i++) {
-                        LaplaceVar.controller_data[gamepad.index].buttons[i] = gamepad.buttons[i].value;
+                        BPGCRemote.controller_data[gamepad.index].buttons[i] = gamepad.buttons[i].value;
                     }
                 } else {
                     addgamepad(gamepad);
                 }
             }
         }
-        if (Object.keys(LaplaceVar.controller_data).length != 0)
-            LaplaceVar.socket.emit('ct', JSON.stringify(LaplaceVar.controller_data));
+        //Send data to server
+        if (Object.keys(BPGCRemote.controller_data).length != 0)
+            BPGCRemote.socket.emit('ct', JSON.stringify(BPGCRemote.controller_data));
     }
 
     window.addEventListener("gamepadconnected", connecthandler);
     window.addEventListener("gamepaddisconnected", disconnecthandler);
+
+    //Setup polling
     setInterval(updateStatus, 50);
 }
 
@@ -563,15 +606,14 @@ function leaveRoom() {
     window.location.href = getBaseUrl();
 }
 
-LaplaceVar.mouse_x = 0.0;
-LaplaceVar.mouse_y = 0.0;
-LaplaceVar.moved = false;
-LaplaceVar.mouse_stamp = 0.0;
-LaplaceVar.lclick = 0;
-LaplaceVar.rclick = 0;
-LaplaceVar.mscroll = 0;
+//IO state variables
+BPGCRemote.mouse_x = 0.0;
+BPGCRemote.mouse_y = 0.0;
+BPGCRemote.moved = false;
+BPGCRemote.mouse_stamp = 0.0;
+BPGCRemote.lclick = 0;
+BPGCRemote.rclick = 0;
+BPGCRemote.mscroll = 0;
 
 initUI();
-document.addEventListener('DOMContentLoaded', routeByUrl, false);
-
-
+// document.addEventListener('DOMContentLoaded', routeByUrl, false);

@@ -1,106 +1,153 @@
 const { mouse, Point, Button, keyboard, Key } = require("@nut-tree/nut-js");
 const ViGEmClient = require('vigemclient');
 let client = new ViGEmClient();
+
+//Establish connection with the driver
 client.connect();
 
-ioDevices ={}
+//Object to store IO device metadata
+ioDevices = {}
 
+//IO device configs
 keyboard.config.autoDelayMs = 0;
 mouse.config.autoDelayMs = 0;
 
+//Mouse state variables
+//To prevent mouse lock by clients
 ioDevices.moved = false, ioDevices.mouse_stamp = Date.now();
+
+//Previous mouse positions
 ioDevices.old_a = 0, ioDevices.old_b = 0;
+
+//Mouse button status
 ioDevices.lclicked = 0, ioDevices.rclicked = 0;
 
+//Update mouse
 ioDevices.mous = (async (jmsg) => {
+
+  //Windows based scaling (Yet to generalize)
   let a = jmsg.X * 1920 * 0.8, b = jmsg.Y * 1080 * 0.8;
+
+  //If new data, break out of mouse sleep
   if (ioDevices.old_a != a || ioDevices.old_b != b || jmsg.leftClick || jmsg.rightClick || jmsg.scroll) {
     ioDevices.old_a = a;
     ioDevices.old_b = b;
     ioDevices.moved = true;
     ioDevices.mouse_stamp = Date.now();
   }
+
+  //Mouse sleep
   if (!ioDevices.moved) return;
+
+  //Set mouse position
   const target = new Point(a, b);
   await mouse.setPosition(target);
+
+  //Left click
   if (jmsg.leftClick != ioDevices.lclicked) {
     if (ioDevices.lclicked == 0) {
-        ioDevices.lclicked = 1;
+      ioDevices.lclicked = 1;
       await mouse.pressButton(Button.LEFT);
     }
     else {
-        ioDevices.lclicked = 0;
+      ioDevices.lclicked = 0;
       await mouse.releaseButton(Button.LEFT);
     }
   }
+
+  //Right click
   if (jmsg.rightClick != ioDevices.rclicked) {
     if (ioDevices.rclicked == 0) {
-        ioDevices.rclicked = 1;
+      ioDevices.rclicked = 1;
       await mouse.pressButton(Button.RIGHT);
     }
     else {
-        ioDevices.rclicked = 0;
+      ioDevices.rclicked = 0;
       await mouse.releaseButton(Button.RIGHT);
     }
   }
+
+  //SCroll event
   if (jmsg.scroll > 0) await mouse.scrollDown(100);
   else if (jmsg.scroll < 0) await mouse.scrollUp(100);
 
 });
 
-
-ioDevices.controller_set_index=0;
+//Controller state variables
+ioDevices.controller_set_index = 0;
 ioDevices.controller_set = {};
-ioDevices.controllerCount=0;
+ioDevices.controllerCount = 0;
 
-ioDevices.makeController = ()=>{
+//Create new controller
+ioDevices.makeController = () => {
   let controller1 = client.createX360Controller();
   controller1.connect();
   controller1.updateMode = "manual";
+  while (ioDevices.controller_set_index in Object.keys(ioDevices.controller_set)) ioDevices.controller_set_index += 1;
   ioDevices.controller_set[ioDevices.controller_set_index] = controller1;
-  ioDevices.controller_set_index+=1;
-  ioDevices.controllerCount+=1;
+  ioDevices.controller_set_index += 1;
+  ioDevices.controllerCount += 1;
+  return ioDevices.controller_set_index - 1;
 };
 
+//Delete given controllers
+ioDevices.deleteControllers = (indices) => {
+  for (let i = 0; i < indices.length; i++) {
+    ioDevices.controller_set[indices[i]].disconnect();
+    delete ioDevices.controller_set[indices[i]];
+  }
+}
+
+
+//Update controller
 ioDevices.cont = (jmsg, num) => {
   let jmsg_len = Object.keys(jmsg).length;
-  for (let i = 0; i < num; i++) {
+  for (let i = 0; i < num.length; i++) {
+
+    //Dont do anything if connected controllers are less than acquired controllers
     if (i + 1 > jmsg_len) break;
+
+    //Perform updates
     var x = jmsg[Object.keys(jmsg)[i]];
-    ioDevices.controller_set[i].axis.leftX.setValue(x.axes[0]);
-    ioDevices.controller_set[i].axis.leftY.setValue(-x.axes[1]);
-    ioDevices.controller_set[i].axis.rightX.setValue(x.axes[2]);
-    ioDevices.controller_set[i].axis.rightY.setValue(-x.axes[3]);
-    ioDevices.controller_set[i].axis.leftTrigger.setValue(x.buttons[6]);
-    ioDevices.controller_set[i].axis.rightTrigger.setValue(x.buttons[7]);
-    ioDevices.controller_set[i].button.A.setValue(x.buttons[0]);
-    ioDevices.controller_set[i].button.B.setValue(x.buttons[1]);
-    ioDevices.controller_set[i].button.X.setValue(x.buttons[2]);
-    ioDevices.controller_set[i].button.Y.setValue(x.buttons[3]);
-    ioDevices.controller_set[i].button.LEFT_THUMB.setValue(x.buttons[10]);
-    ioDevices.controller_set[i].button.RIGHT_THUMB.setValue(x.buttons[11]);
-    ioDevices.controller_set[i].button.BACK.setValue(x.buttons[8]);
-    ioDevices.controller_set[i].button.START.setValue(x.buttons[9]);
-    ioDevices.controller_set[i].button.LEFT_SHOULDER.setValue(x.buttons[4]);
-    ioDevices.controller_set[i].button.RIGHT_SHOULDER.setValue(x.buttons[5]);
-    ioDevices.controller_set[i].axis.dpadHorz.setValue(-x.buttons[14] + x.buttons[15]);
-    ioDevices.controller_set[i].axis.dpadVert.setValue(x.buttons[12] - x.buttons[13]);
-    ioDevices.controller_set[i].update();
+    ioDevices.controller_set[num[i]].axis.leftX.setValue(x.axes[0]);
+    ioDevices.controller_set[num[i]].axis.leftY.setValue(-x.axes[1]);
+    ioDevices.controller_set[num[i]].axis.rightX.setValue(x.axes[2]);
+    ioDevices.controller_set[num[i]].axis.rightY.setValue(-x.axes[3]);
+    ioDevices.controller_set[num[i]].axis.leftTrigger.setValue(x.buttons[6]);
+    ioDevices.controller_set[num[i]].axis.rightTrigger.setValue(x.buttons[7]);
+    ioDevices.controller_set[num[i]].button.A.setValue(x.buttons[0]);
+    ioDevices.controller_set[num[i]].button.B.setValue(x.buttons[1]);
+    ioDevices.controller_set[num[i]].button.X.setValue(x.buttons[2]);
+    ioDevices.controller_set[num[i]].button.Y.setValue(x.buttons[3]);
+    ioDevices.controller_set[num[i]].button.LEFT_THUMB.setValue(x.buttons[10]);
+    ioDevices.controller_set[num[i]].button.RIGHT_THUMB.setValue(x.buttons[11]);
+    ioDevices.controller_set[num[i]].button.BACK.setValue(x.buttons[8]);
+    ioDevices.controller_set[num[i]].button.START.setValue(x.buttons[9]);
+    ioDevices.controller_set[num[i]].button.LEFT_SHOULDER.setValue(x.buttons[4]);
+    ioDevices.controller_set[num[i]].button.RIGHT_SHOULDER.setValue(x.buttons[5]);
+    ioDevices.controller_set[num[i]].axis.dpadHorz.setValue(-x.buttons[14] + x.buttons[15]);
+    ioDevices.controller_set[num[i]].axis.dpadVert.setValue(x.buttons[12] - x.buttons[13]);
+    ioDevices.controller_set[num[i]].update();
   }
 };
 
-
+//Keyboard state variables
 ioDevices.key_status = {};
 ioDevices.key_stamp = Date.now();
 
+//Keyboard update
 ioDevices.press = (async (p, c) => {
+
+  //Store keystate and timestamp
   if (p == 1) {
     ioDevices.key_status[c] = 1;
   }
   else {
-    ioDevices. key_status[c] = 0;
+    ioDevices.key_status[c] = 0;
   }
   ioDevices.key_stamp = Date.now();
+
+  //Press or releaase corresponding key
   switch (c) {
     case 32: if (p == 1) { await keyboard.pressKey(Key.Space); } else { await keyboard.releaseKey(Key.Space); } break;
     case 27: if (p == 1) { await keyboard.pressKey(Key.Escape); } else { await keyboard.releaseKey(Key.Escape); } break;
@@ -204,9 +251,11 @@ ioDevices.press = (async (p, c) => {
   //await new Promise(resolve => setTimeout(resolve, 4000));
 });
 
-ioDevices.init=()=>{
-  setInterval(() => {if (Date.now() - ioDevices.mouse_stamp > 1000) { ioDevices.moved = false; } }, 1000);
+ioDevices.init = () => {
+
+  //Setup intervals to reset/sleep devices that are idle
+  setInterval(() => { if (Date.now() - ioDevices.mouse_stamp > 1000) { ioDevices.moved = false; } }, 1000);
   setInterval(() => { if (Date.now() - ioDevices.key_stamp > 1000) { let j = Object.keys(ioDevices.key_status); for (let i = 0; i < j.length; i++) { if (ioDevices.key_stamp[j[i]]) press(0, j[i]); } } }, 1000);
 }
 
-module.exports=ioDevices;
+module.exports = ioDevices;
