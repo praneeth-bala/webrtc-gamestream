@@ -6,7 +6,7 @@
 
 #video-wrapper video {
     max-width: 90vw;
-    max-height: 70vh;
+    max-height: 90vh;
     box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.50);
     outline: none;
 }
@@ -84,7 +84,8 @@
     font-size: 0.8rem;
 }
 
-.config-panel input, .config-panel textarea {
+.config-panel input,
+.config-panel textarea {
     font-size: 0.8rem;
     font-family: Consolas, monospace;
 }
@@ -103,3 +104,14 @@
         width: 100%;
     }
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.example::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .example {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
