@@ -144,7 +144,7 @@ function initUI() {
 
         //Setup websocket
         print('[+] Initiate websocket');
-        BPGCRemote.socket = io('https://' + window.location.host + '/ws_connect', {
+        BPGCRemote.socket = io('http://' + window.location.host + '/ws_connect', {
             reconnectionDelay: 1000,
             reconnection: true,
             reconnectionAttemps: 10,
@@ -347,7 +347,7 @@ async function startStream(displayMediaOption, pcOption) {
     BPGCRemote.ui.video.muted = true; // prevent duplicate sound played
 
     print('[+] Initiate websocket');
-    BPGCRemote.socket = io('https://' + window.location.host + '/ws_serve', {
+    BPGCRemote.socket = io('http://' + window.location.host + '/ws_serve', {
         reconnectionDelay: 1000,
         reconnection: true,
         reconnectionAttemps: 10,

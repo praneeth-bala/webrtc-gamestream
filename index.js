@@ -1,5 +1,5 @@
 const express = require('express');
-var https = require('https');
+var http = require('http');
 var fs = require('fs');
 var sio = require('socket.io');
 var app = express();
@@ -15,7 +15,7 @@ var options = {
 
 //Init
 IO.init();
-var server = https.createServer(options, app);
+var server = http.createServer(app);
 var io = sio(server);
 app.use(express.static('files'))
 
@@ -130,8 +130,8 @@ app.get('/', (req, res) => {
 });
 
 //Start the server
-server.listen(443, function () {
-  console.log('Server up and running at port %s', 443);
+server.listen(80, function () {
+  console.log('Server up and running at port %s', 80);
 });
 
 
