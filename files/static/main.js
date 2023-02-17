@@ -51,7 +51,7 @@ const rtpPeerConnectionOptions = {
 const preset = {
     balanced: {
         displayMediaOption: displayMediaOptions.v720p30,
-        rtpPeerConnectionOption: rtpPeerConnectionOptions.stunGoogle,
+        rtpPeerConnectionOption: rtpPeerConnectionOptions.noStun,
     },
     performance: {
         displayMediaOption: displayMediaOptions.v720p60,
@@ -144,7 +144,7 @@ function initUI() {
 
         //Setup websocket
         print('[+] Initiate websocket');
-        BPGCRemote.socket = io('http://' + window.location.host + '/ws_connect', {
+        BPGCRemote.socket = io('https://' + window.location.host + '/ws_connect', {
             reconnectionDelay: 1000,
             reconnection: true,
             reconnectionAttemps: 10,
@@ -291,7 +291,7 @@ async function newSessionStream(sessionID, pcOption) {
 
 
     print('[+] Creating offer');
-    const offer = await BPGCRemote.pcs[sessionID].createOffer({
+    var offer = await BPGCRemote.pcs[sessionID].createOffer({
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
     });
@@ -347,7 +347,7 @@ async function startStream(displayMediaOption, pcOption) {
     BPGCRemote.ui.video.muted = true; // prevent duplicate sound played
 
     print('[+] Initiate websocket');
-    BPGCRemote.socket = io('http://' + window.location.host + '/ws_serve', {
+    BPGCRemote.socket = io('https://' + window.location.host + '/ws_serve', {
         reconnectionDelay: 1000,
         reconnection: true,
         reconnectionAttemps: 10,
@@ -430,7 +430,19 @@ async function gotOffer(sID, v) {
     await BPGCRemote.pc.setRemoteDescription(new RTCSessionDescription(v));
 
     print('[+] Create answer');
-    const answer = await BPGCRemote.pc.createAnswer();
+    var answer = await BPGCRemote.pc.createAnswer();
+    // var arr = answer.sdp.split('\r\n');
+    // arr.forEach((str, i) => {
+    //     if (/^a=fmtp:\d*/.test(str)) {
+    //       arr[i] = str + ';x-google-max-bitrate=15000;x-google-min-bitrate=0;x-google-start-bitrate=10000';
+    //     } else if (/^a=mid:(1|video)/.test(str)) {
+    //       arr[i] += '\r\nb=AS:15000';
+    //     }
+    // });
+    // answer = new RTCSessionDescription({
+    //     type: 'answer',
+    //     sdp: arr.join('\r\n'),
+    // })
     await BPGCRemote.pc.setLocalDescription(answer);
 
     print('[+] Send answer to websocket: ' + JSON.stringify(answer));
@@ -504,7 +516,7 @@ function init_mouse() {
 
     //Intervals to check for idle state and send data
     setInterval(() => { if (BPGCRemote.moved) { mouseSendEvent(); BPGCRemote.mscroll = 0; } }, 50);
-    setInterval(() => { if (BPGCRemote.moved && Date.now() - BPGCRemote.mouse_stamp > 5000) { BPGCRemote.moved = false; } }, 5000);
+    setInterval(() => { if (BPGCRemote.moved && Date.now() - BPGCRemote.mouse_stamp > 1000) { BPGCRemote.moved = false; } }, 1000);
 }
 
 
@@ -617,3 +629,12 @@ BPGCRemote.mscroll = 0;
 
 initUI();
 // document.addEventListener('DOMContentLoaded', routeByUrl, false);
+
+function goFullscreen(id) {
+    var element = document.getElementById(id);
+    if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullScreen) {
+        element.webkitRequestFullScreen();
+    }
+}

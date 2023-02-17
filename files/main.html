@@ -71,7 +71,7 @@
 
     <div class="container-fluid" id="video-container">
         <div id="video-wrapper">
-            <video id="mainVideo" autoplay playsinline style="width: auto; height: 86vh; ">
+            <video id="mainVideo" autoplay playsinline style="width: auto; height: auto; ">
             </video>
         </div>
     </div>
@@ -95,7 +95,8 @@
                 </tr>
             </table>
             <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStream" onclick="leaveRoom()">Leave
-                Room</button>
+                Room</button><br>
+            <button type="button" class="btn btn-dark btn-block-xs-only" id="btnStream" onclick="goFullscreen('mainVideo')">FullScreen</button>
         </div>
         <hr>
         <pre id="output"></pre>
